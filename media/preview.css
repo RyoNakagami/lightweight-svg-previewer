@@ -1,0 +1,105 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+}
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.3));
+  background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  user-select: none;
+}
+
+#toolbar button {
+  background: var(--vscode-button-secondaryBackground, transparent);
+  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  min-width: 28px;
+}
+
+#toolbar button:hover {
+  background: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-hoverBackground));
+}
+
+#toolbar #status {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+#viewport {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
+}
+
+body[data-bg="checkerboard"] #viewport {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #d8d8d8 25%, transparent 25%),
+    linear-gradient(-45deg, #d8d8d8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #d8d8d8 75%),
+    linear-gradient(-45deg, transparent 75%, #d8d8d8 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+body[data-bg="editor"] #viewport {
+  background: var(--vscode-editor-background);
+}
+
+body[data-bg="transparent"] #viewport {
+  background: transparent;
+}
+
+body[data-bg="white"] #viewport {
+  background: #ffffff;
+}
+
+body[data-bg="black"] #viewport {
+  background: #000000;
+}
+
+#root {
+  display: inline-block;
+  transform-origin: 0 0;
+  padding: 16px;
+  min-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+#root svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#root.fit svg {
+  width: 100%;
+  height: auto;
+}
+
+#root.error {
+  color: var(--vscode-errorForeground);
+  white-space: pre-wrap;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+}

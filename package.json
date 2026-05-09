@@ -1,0 +1,122 @@
+{
+  "name": "lightweight-svg-previewer",
+  "displayName": "Lightweight SVG Previewer",
+  "description": "Edit SVG as text and see a live preview in a side webview. Zero runtime dependencies.",
+  "version": "0.0.1",
+  "publisher": "RyoNak",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "homepage": "https://github.com/RyoNakagami/lightweight-svg-previewer#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RyoNakagami/lightweight-svg-previewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/RyoNakagami/lightweight-svg-previewer/issues"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "svg",
+    "preview",
+    "viewer",
+    "lightweight",
+    "live"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:xml",
+    "workspaceContains:**/*.svg"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "lightweightSvgPreviewer.showPreview",
+        "title": "Open SVG Preview to the Side",
+        "category": "SVG Preview"
+      },
+      {
+        "command": "lightweightSvgPreviewer.togglePreview",
+        "title": "Toggle Preview",
+        "category": "SVG Preview"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "lightweightSvgPreviewer.togglePreview",
+        "key": "ctrl+k v",
+        "when": "editorTextFocus && resourceExtname == .svg"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "lightweightSvgPreviewer.showPreview",
+          "when": "resourceExtname == .svg",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "lightweightSvgPreviewer.showPreview",
+          "when": "resourceExtname == .svg",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Lightweight SVG Previewer",
+      "properties": {
+        "lightweightSvgPreviewer.debounceMs": {
+          "type": "number",
+          "default": 150,
+          "minimum": 0,
+          "maximum": 2000,
+          "description": "Milliseconds to wait after the last edit before refreshing the preview."
+        },
+        "lightweightSvgPreviewer.autoOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically open the preview to the side when an SVG file is opened in a text editor."
+        },
+        "lightweightSvgPreviewer.background": {
+          "type": "string",
+          "enum": [
+            "checkerboard",
+            "editor",
+            "transparent",
+            "white",
+            "black"
+          ],
+          "default": "checkerboard",
+          "description": "Background style for the preview canvas."
+        }
+      }
+    },
+    "configurationDefaults": {
+      "workbench.editorAssociations": {
+        "*.svg": "default"
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -p . -w",
+    "typecheck": "tsc -p . --noEmit",
+    "test": "npm run compile && node --test \"dist/**/*.test.js\"",
+    "test:unit": "npm test",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.24.0",
+    "typescript": "^5.4.0"
+  }
+}

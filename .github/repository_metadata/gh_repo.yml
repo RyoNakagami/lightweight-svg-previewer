@@ -1,0 +1,12 @@
+meta-data:
+  repository_name: lightweight-svg-previewer
+  visibility: public
+  org-name: RyoNakagami
+  tag:
+    - vscode-extension
+    - svg
+    - previewer
+  description: |
+    A live preview in a side webview while editing SVG files. Zero runtime dependencies.
+  homepage: null
+  license: mit
