@@ -2,7 +2,7 @@
   "name": "lightweight-svg-previewer",
   "displayName": "Lightweight SVG Previewer",
   "description": "Edit SVG as text and see a live preview in a side webview. Zero runtime dependencies.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "RyoNak",
   "license": "MIT",
   "icon": "images/icon.png",
