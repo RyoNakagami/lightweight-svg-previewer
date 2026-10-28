@@ -6,6 +6,37 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-28
+
+### Added
+
+- `*.svg` now opens directly in a preview-only **SVG Preview** custom editor
+  (no source shown).
+- Command **SVG Preview: Show Source to the Side** — <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
+  (<kbd>Cmd</kbd>+<kbd>Enter</kbd> on macOS) while the preview is focused opens
+  the source beside it; edits update the preview live.
+
+### Changed
+
+- Single shared change listener and per-document debounce; `getText()` runs
+  once per refresh and only visible, out-of-date previews are updated.
+- Settings are cached instead of read on every keystroke.
+- Previews no longer use `retainContextWhenHidden`; hidden tabs free their
+  webview and resync (keeping zoom / fit) when shown again.
+- The initial content is sent once, on webview `ready`.
+
+### Removed
+
+- `configurationDefaults` forcing `*.svg` to open in the text editor.
+- `workspaceContains:**/*.svg` activation event (avoids a workspace scan at
+  startup).
+
+## [0.0.2] - 2026-05-09
+
+### Changed
+
+- Version bump only; no functional changes.
+
 ## [0.0.1] - 2026-05-09
 
 ### Added

@@ -13,3 +13,4 @@ PUBLISHING.md
 **/*.svg
 *.vsix
 dist/**/*.test.js
+docs/**

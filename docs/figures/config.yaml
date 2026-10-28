@@ -1,0 +1,7 @@
+schema: omtkc/1
+language: ja
+repo_root: ../..
+scope:
+  - src/
+  - media/
+  - package.json

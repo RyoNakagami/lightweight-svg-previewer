@@ -4,18 +4,21 @@
   const root = document.getElementById('root');
   const status = document.getElementById('status');
   const body = document.body;
+  const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null;
 
-  let zoom = 1;
-  let lastContent = '';
+  // Zoom survives the webview being discarded while hidden.
+  const saved = (vscode && vscode.getState()) || {};
+  let zoom = typeof saved.zoom === 'number' ? saved.zoom : 1;
+  if (saved.fit) root.classList.add('fit');
 
   function applyZoom() {
     root.style.transform = zoom === 1 ? '' : 'scale(' + zoom + ')';
     status.textContent = Math.round(zoom * 100) + '%';
+    if (vscode) vscode.setState({ zoom: zoom, fit: root.classList.contains('fit') });
   }
 
+  // The extension only sends changed document versions, so no dedup here.
   function setContent(svgText) {
-    if (svgText === lastContent) return;
-    lastContent = svgText;
     // Strip script tags defensively. Webview CSP already blocks them but
     // removing keeps the DOM clean and avoids parser errors.
     const cleaned = svgText.replace(/<script[\s\S]*?<\/script>/gi, '');
@@ -79,6 +82,5 @@
   applyZoom();
 
   // Tell the extension we're ready to receive content (covers reload cases).
-  const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null;
   if (vscode) vscode.postMessage({ type: 'ready' });
 })();

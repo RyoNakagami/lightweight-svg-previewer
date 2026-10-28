@@ -1,0 +1,15 @@
+kind: group
+status: active
+sources:
+  - src/extension.ts#attachPreview
+  - src/extension.ts#activate
+  - package.json
+children: [activation, custom-editor-provider, side-panel, attach-preview, webview-script, vscode-webview-host]
+refs: []
+analyzed_commit: 0d1645c
+working_tree_dirty: true
+render:
+  tikz_sha256: cd49012f32919d785b0973f061c5be6caf723e7816eb590161a5d35f9fd13f0f
+  tikzc_version: 1.3.0
+  check: pass
+  visual: inspected

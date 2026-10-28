@@ -1,0 +1,48 @@
+#| mainfont: Noto Sans CJK JP
+% 起動・プレビュー生成・非表示/再表示の流れと，メモリ／起動コストを抑える工夫．
+% Semantic node IDs match child directories; notes and helpers have no ID.
+\definecolor{navy}{HTML}{0E3666}
+\definecolor{aliceblue}{HTML}{E8F1FE}
+\definecolor{azureblue}{HTML}{428CE6}
+\definecolor{paleskyblue}{HTML}{B4D7FF}
+\definecolor{fontblack}{HTML}{1A1A1A}
+\definecolor{darkgray}{HTML}{575757}
+\definecolor{lightgray}{HTML}{DEDEDE}
+\definecolor{crimsonred}{HTML}{D31804}
+\definecolor{mistyrose}{HTML}{FBE7E6}
+\begin{tikzpicture}[
+  every node/.style={text=fontblack},
+  block/.style={draw=navy,fill=aliceblue,rounded corners=3pt,
+    align=center,minimum width=3.6cm,minimum height=1.25cm,inner sep=8pt},
+  entry/.style={block,line width=1.6pt},
+  accent/.style={block,fill=paleskyblue},
+  store/.style={block,shape=cylinder,shape border rotate=90,aspect=0.15,
+    rounded corners=0pt,fill=white,minimum height=1.0cm},
+  external/.style={block,draw=darkgray,fill=white,dashed},
+  rel/.style={font=\footnotesize,text=darkgray,fill=white,inner sep=2pt},
+  note/.style={font=\footnotesize,text=darkgray,align=center},
+  step/.style={font=\footnotesize\bfseries,text=azureblue},
+  >={Stealth[length=2.5mm]},font=\small,line width=0.7pt
+]
+  \node[entry] (activation) at (0,0) {遅延 activation\\\texttt{activate()}};
+  \node[block] (custom-editor-provider) at (7.4,1.5) {プレビュー専用エディタ\\\texttt{SvgPreviewEditorProvider}};
+  \node[block] (side-panel) at (7.4,-1.5) {サイドプレビュー\\\texttt{openPreview}};
+  \node[accent] (attach-preview) at (13.8,0) {\texttt{attachPreview}\\台帳登録・\texttt{ready} で同期};
+  \node[block] (webview-script) at (20.4,0) {Webview スクリプト\\\texttt{media/preview.js}};
+  \node[external] (vscode-webview-host) at (20.4,-3.8) {VS Code\\Webview ホスト};
+
+  \draw[->,navy] (activation.east) -- ++(0.6,0) |- node[rel,pos=0.75,above] {プロバイダ登録} (custom-editor-provider.west);
+  \draw[->,navy] (activation.east) -- ++(0.6,0) |- node[rel,pos=0.75,below] {コマンド／\texttt{autoOpen}} (side-panel.west);
+  \draw[->,navy] (custom-editor-provider.east) -- ++(0.7,0) |- node[rel,pos=0.25,right] {解決時} ([yshift=3mm]attach-preview.west);
+  \draw[->,navy] (side-panel.east) -- ++(0.7,0) |- node[rel,pos=0.25,right] {生成時} ([yshift=-3mm]attach-preview.west);
+  \draw[->,navy] ([yshift=3mm]attach-preview.east) -- node[rel,above] {\texttt{config} → \texttt{update}} ([yshift=3mm]webview-script.west);
+  \draw[->,navy] ([yshift=-3mm]webview-script.west) -- node[rel,below] {\texttt{ready}} ([yshift=-3mm]attach-preview.east);
+  \draw[->,navy] ([xshift=-6mm]vscode-webview-host.north) -- node[rel,left] {再表示で再ロード} ([xshift=-6mm]webview-script.south);
+  \draw[->,navy] ([xshift=6mm]webview-script.south) -- node[rel,right] {\texttt{setState}（zoom・fit）} ([xshift=6mm]vscode-webview-host.north);
+
+  \node[step,above=4mm of activation] {① 必要になるまで起動しない};
+  \node[step,above=4mm of webview-script] {③ 表示中だけ存在};
+  \node[step,anchor=south] at ($(attach-preview.north)+(0,0.4)$) {② 初回送信は ready の 1 回};
+  \node[note,below=3mm of activation] {\texttt{onCustomEditor}・\texttt{onLanguage:xml}\\起動時のワークスペース走査なし};
+  \node[note,anchor=north east] at ([xshift=-3mm]vscode-webview-host.north west) {\texttt{retainContextWhenHidden} なし\\→ 非表示タブは描画結果を保持しない};
+\end{tikzpicture}

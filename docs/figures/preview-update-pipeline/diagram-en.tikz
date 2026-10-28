@@ -1,0 +1,53 @@
+#| mainfont: Noto Sans CJK JP
+% English version: how one edit reaches the preview, and the work each stage skips.
+% Semantic node IDs match child directories; notes and helpers have no ID.
+\definecolor{navy}{HTML}{0E3666}
+\definecolor{aliceblue}{HTML}{E8F1FE}
+\definecolor{azureblue}{HTML}{428CE6}
+\definecolor{paleskyblue}{HTML}{B4D7FF}
+\definecolor{fontblack}{HTML}{1A1A1A}
+\definecolor{darkgray}{HTML}{575757}
+\definecolor{lightgray}{HTML}{DEDEDE}
+\definecolor{crimsonred}{HTML}{D31804}
+\definecolor{mistyrose}{HTML}{FBE7E6}
+\begin{tikzpicture}[
+  every node/.style={text=fontblack},
+  block/.style={draw=navy,fill=aliceblue,rounded corners=3pt,
+    align=center,minimum width=3.6cm,minimum height=1.25cm,inner sep=8pt},
+  entry/.style={block,line width=1.6pt},
+  accent/.style={block,fill=paleskyblue},
+  store/.style={block,shape=cylinder,shape border rotate=90,aspect=0.15,
+    rounded corners=0pt,fill=white,minimum height=1.0cm},
+  external/.style={block,draw=darkgray,fill=white,dashed},
+  rel/.style={font=\footnotesize,text=darkgray,fill=white,inner sep=2pt},
+  note/.style={font=\footnotesize,text=darkgray,align=center},
+  step/.style={font=\footnotesize\bfseries,text=azureblue},
+  >={Stealth[length=2.5mm]},font=\small,line width=0.7pt
+]
+  % Main path (left to right)
+  \node[external] (vscode-text-document) at (0,0) {VS Code\\TextDocument};
+  \node[entry] (change-listener) at (6.0,0) {Single change listener\\\texttt{onDidChangeTextDocument}};
+  \node[block] (debounce-timers) at (12.0,0) {Per-document debounce\\\texttt{debounceTimers}};
+  \node[accent] (flush) at (18.0,0) {\texttt{flush(key)}\\skip hidden / same version\\\texttt{getText()} called once};
+  \node[block] (webview-renderer) at (24.0,0) {Webview\\\texttt{media/preview.js}};
+
+  % Bottom row: in-memory state that is looked up
+  \node[store] (config-cache) at (12.0,-3.3) {Config cache\\\texttt{config}};
+  \node[store] (preview-registry) at (18.0,-3.3) {Preview registry\\\texttt{previews}};
+
+  \draw[->,navy] (vscode-text-document) -- node[rel,above=4pt] {edit} (change-listener);
+  \draw[->,navy] (change-listener) -- node[rel,above=4pt] {reset timer} (debounce-timers);
+  \draw[->,navy] (debounce-timers) -- node[rel,above=4pt] {when idle} (flush);
+  \draw[->,navy] (flush) -- node[rel,above=4pt] {full \texttt{update}} (webview-renderer);
+  \draw[->,navy] (config-cache) -- node[rel,right] {\texttt{debounceMs}} (debounce-timers);
+  \draw[->,navy] (preview-registry) -- node[rel,right,align=left] {target previews and\\last-sent version} (flush);
+  \draw[->,navy] (preview-registry.south) -- ++(0,-0.6) coordinate (_r) -| node[rel,pos=0.25,below] {is this URI registered?} (change-listener.south);
+
+  % Work skipped at each stage (unframed notes)
+  \node[step,above=4mm of change-listener] {① Early return};
+  \node[step,above=4mm of debounce-timers] {② Coalesce keystrokes};
+  \node[step,above=4mm of flush] {③ Decide not to send};
+  \node[step,above=4mm of webview-renderer] {④ Render without diffing};
+  \node[note,anchor=north east] at ([xshift=-2mm,yshift=-3mm]change-listener.south) {No content change, or\\no preview for the doc:\\stop here};
+  \node[note,below=3mm of webview-renderer] {\texttt{innerHTML} swap only\\(no parser, no DOM diff)};
+\end{tikzpicture}
