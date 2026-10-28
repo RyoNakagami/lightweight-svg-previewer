@@ -1,8 +1,8 @@
 {
   "name": "lightweight-svg-previewer",
   "displayName": "Lightweight SVG Previewer",
-  "description": "Edit SVG as text and see a live preview in a side webview. Zero runtime dependencies.",
-  "version": "0.0.2",
+  "description": "Open SVG files as a preview-only editor; press Ctrl+Enter to edit the source beside it with live updates. Zero runtime dependencies.",
+  "version": "0.1.0",
   "publisher": "RyoNak",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -31,9 +31,21 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:xml",
-    "workspaceContains:**/*.svg"
+    "onCustomEditor:lightweightSvgPreviewer.editor"
   ],
   "contributes": {
+    "customEditors": [
+      {
+        "viewType": "lightweightSvgPreviewer.editor",
+        "displayName": "SVG Preview",
+        "selector": [
+          {
+            "filenamePattern": "*.svg"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
     "commands": [
       {
         "command": "lightweightSvgPreviewer.showPreview",
@@ -44,6 +56,12 @@
         "command": "lightweightSvgPreviewer.togglePreview",
         "title": "Toggle Preview",
         "category": "SVG Preview"
+      },
+      {
+        "command": "lightweightSvgPreviewer.showSource",
+        "title": "Show Source to the Side",
+        "category": "SVG Preview",
+        "icon": "$(go-to-file)"
       }
     ],
     "keybindings": [
@@ -51,13 +69,24 @@
         "command": "lightweightSvgPreviewer.togglePreview",
         "key": "ctrl+k v",
         "when": "editorTextFocus && resourceExtname == .svg"
+      },
+      {
+        "command": "lightweightSvgPreviewer.showSource",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "activeCustomEditorId == 'lightweightSvgPreviewer.editor'"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "command": "lightweightSvgPreviewer.showPreview",
-          "when": "resourceExtname == .svg",
+          "when": "resourceExtname == .svg && activeCustomEditorId != 'lightweightSvgPreviewer.editor'",
+          "group": "navigation"
+        },
+        {
+          "command": "lightweightSvgPreviewer.showSource",
+          "when": "activeCustomEditorId == 'lightweightSvgPreviewer.editor'",
           "group": "navigation"
         }
       ],
@@ -66,6 +95,12 @@
           "command": "lightweightSvgPreviewer.showPreview",
           "when": "resourceExtname == .svg",
           "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "lightweightSvgPreviewer.showSource",
+          "when": "activeCustomEditorId == 'lightweightSvgPreviewer.editor'"
         }
       ]
     },
@@ -82,7 +117,7 @@
         "lightweightSvgPreviewer.autoOpen": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically open the preview to the side when an SVG file is opened in a text editor."
+          "description": "When an SVG is opened in a text editor, automatically open a side preview (skipped if the SVG Preview editor already shows it)."
         },
         "lightweightSvgPreviewer.background": {
           "type": "string",
@@ -96,11 +131,6 @@
           "default": "checkerboard",
           "description": "Background style for the preview canvas."
         }
-      }
-    },
-    "configurationDefaults": {
-      "workbench.editorAssociations": {
-        "*.svg": "default"
       }
     }
   },

@@ -4,29 +4,31 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-node%3Atest-43853d)](#development)
 
-A no-frills VS Code extension that opens `*.svg` files as text and shows a
-**live, side-by-side preview** in a webview. Zero runtime dependencies, strict
-CSP, fast on 1 MB+ SVGs.
+A no-frills VS Code extension for SVG files. Opening an `*.svg` shows the
+**rendered preview only**; press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to open the
+source beside it and watch edits render live. Zero runtime dependencies,
+strict CSP, fast on 1 MB+ SVGs.
 
-> Edit your SVG. Watch it render. That's the whole product.
+> Open an SVG, see it. Need the code? <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.
 
 ---
 
 ## ✨ Features
 
-- 📝 **Text-first editing.** Sets `workbench.editorAssociations` so `*.svg`
-  opens in the default text editor (instead of VS Code's built-in image
-  preview).
-- ⚡ **Live preview, side-by-side.** Toggle a webview in
-  `ViewColumn.Beside` with <kbd>Ctrl</kbd>+<kbd>K</kbd> <kbd>V</kbd>
-  (or set `autoOpen: true` to open it whenever an SVG is opened). Edits are
-  reflected in real time with a configurable debounce (default 150 ms —
-  comfortably under a 200 ms target).
+- 👀 **Preview-first.** `*.svg` opens directly in the **SVG Preview**
+  editor — no source shown. Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
+  (<kbd>Cmd</kbd>+<kbd>Enter</kbd> on macOS) with the preview focused to open
+  the source to the side; edits are reflected live.
+- ⚡ **Live updates.** Edits are reflected in real time with a configurable
+  debounce (default 150 ms).
+- ↔️ **Side preview for text editors.** When an SVG is open as text, toggle
+  a preview beside it with <kbd>Ctrl</kbd>+<kbd>K</kbd> <kbd>V</kbd> (or set
+  `autoOpen: true`).
 - 🪶 **Lightweight.** No bundlers, no SVG parsers, no DOM diffing. The
   webview swaps `innerHTML`. Comfortable on 1 MB+ SVGs because the debounce
   coalesces edits and rendering uses the browser's native engine.
-- 💾 **Stable while hidden.** `retainContextWhenHidden: true` plus
-  message-based updates means tab switches don't trigger reloads.
+- 💤 **Idle when hidden.** Hidden previews are released by VS Code and get
+  no updates; they resync on show, keeping zoom via webview state.
 - 🔍 **Zoom & fit.** Toolbar buttons (`−` / `100%` / `+` / `fit`) and
   `Ctrl/Cmd + scroll` to zoom.
 - 🛡️ **Strict CSP.** Per-panel `script-src 'nonce-…'`; no inline scripts,
@@ -41,12 +43,17 @@ CSP, fast on 1 MB+ SVGs.
 ```bash
 npm install
 npm run compile
-npm run package          # → lightweight-svg-previewer-0.0.1.vsix
-code --install-extension lightweight-svg-previewer-0.0.1.vsix
+npm run package          # → lightweight-svg-previewer-0.1.0.vsix
+code --install-extension lightweight-svg-previewer-0.1.0.vsix
 ```
 
-Reload VS Code, open any `.svg`, and press <kbd>Ctrl</kbd>+<kbd>K</kbd>
-<kbd>V</kbd> to toggle the preview on/off.
+Reload VS Code and open any `.svg` — it opens in the SVG Preview editor.
+Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>Cmd</kbd>+<kbd>Enter</kbd> on
+macOS) in the preview to open the source to the side.
+
+> Upgrading from 0.0.x? If your user `settings.json` has
+> `"workbench.editorAssociations": { "*.svg": "default" }`, remove that entry,
+> otherwise SVGs keep opening as text.
 
 ### Install from Marketplace
 
@@ -73,6 +80,7 @@ Settings update live — no reload required.
 | ------------------------------------------------ | ------------------------------------ | --------------------------------------------------- | --------------------------------------------------------- |
 | `lightweightSvgPreviewer.showPreview`            | SVG Preview: Open SVG Preview to the Side | —                                                   | Always (palette / editor title bar / Explorer context).   |
 | `lightweightSvgPreviewer.togglePreview`          | SVG Preview: Toggle Preview          | <kbd>Ctrl</kbd>+<kbd>K</kbd> <kbd>V</kbd> (chord)   | `editorTextFocus && resourceExtname == .svg`              |
+| `lightweightSvgPreviewer.showSource`             | SVG Preview: Show Source to the Side | <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>Cmd</kbd>+<kbd>Enter</kbd> on macOS) | SVG Preview editor is active                              |
 
 > The keybinding follows VS Code's <kbd>Ctrl</kbd>+<kbd>K</kbd> chord
 > family (same prefix as <kbd>Ctrl</kbd>+<kbd>K</kbd> <kbd>V</kbd> for the
@@ -81,22 +89,38 @@ Settings update live — no reload required.
 
 ## 🧠 How it works
 
-```
-┌───────────────────────────┐       postMessage       ┌──────────────────────┐
-│ Text Editor (.svg)        │────────────────────────▶│ Webview (ViewColumn  │
-│  onDidChangeTextDocument  │     debounce 150ms      │   .Beside)           │
-│  onDidOpenTextDocument    │                         │   innerHTML swap     │
-└───────────────────────────┘                         └──────────────────────┘
-        ▲                                                       │
-        │  ready / config messages                              │
-        └───────────────────────────────────────────────────────┘
-```
+### Update pipeline — how one edit reaches the preview
 
-- One webview per document (`Map<docUri, WebviewPanel>`).
-- One `setTimeout` debounce timer per document; cleared on every keystroke.
-- Update messages carry the **full document text**. Coalescing happens via
-  the debounce so very large SVGs only re-render once per quiet period.
-- HTML is generated per-panel with a fresh CSP nonce (no inline scripts).
+![Update pipeline: a single change listener, per-document debounce, and a flush step that skips hidden or up-to-date previews](docs/figures/preview-update-pipeline/diagram-en.png)
+
+1. **Early return.** One `onDidChangeTextDocument` listener serves every
+   preview. Events with no content change, and documents that have no
+   preview, stop after a single map lookup.
+2. **Coalesce keystrokes.** One debounce timer per document (default
+   150 ms, read from a cached config). While you type, the only work is
+   resetting that timer.
+3. **Decide not to send.** When the timer fires, previews that are hidden
+   or already have the current `document.version` are skipped.
+   `getText()` runs once and the string is shared by all remaining previews.
+4. **Render without diffing.** The webview strips `<script>` and swaps
+   `innerHTML`. There is no SVG parser and no DOM diff.
+
+### Webview lifecycle — how startup and memory stay low
+
+![Webview lifecycle: lazy activation, a shared attachPreview that syncs on ready, and webviews that are discarded while hidden](docs/figures/webview-lifecycle/diagram-en.png)
+
+1. **Start only when needed.** The extension activates on
+   `onCustomEditor` (opening an SVG) or `onLanguage:xml` (for `autoOpen`).
+   It does not scan the workspace at startup.
+2. **One initial send, on `ready`.** The preview-only editor and the side
+   preview share `attachPreview`. It sends the config and the full text
+   once the webview script reports `ready`, and never before.
+3. **Exists only while visible.** Previews don't use
+   `retainContextWhenHidden`, so VS Code discards hidden webviews and they
+   hold no rendered SVG. When shown again, the webview reloads, sends
+   `ready`, and resyncs. Zoom and fit are kept with `setState`.
+
+Each panel's HTML gets a fresh CSP nonce (no inline scripts).
 
 ## 🏎️ Performance
 
@@ -106,23 +130,27 @@ Settings update live — no reload required.
   ```jsonc
   "lightweightSvgPreviewer.debounceMs": 300
   ```
-- Memory: the extension keeps no edit history, doesn't snapshot the
-  document, and reuses the webview across edits. Each panel is one
-  `WebviewPanel` retaining one `<div>` of SVG markup.
+- Switching back to a hidden tab re-renders the SVG once, because hidden
+  webviews are discarded to save memory. On very large SVGs this can
+  cause a brief delay.
 
 ## ❓ FAQ / Troubleshooting
 
-**How do I open the preview?**
-By default the preview is **not** opened automatically. Use the keybinding
+**How do I see the source?**
+Focus the SVG Preview editor and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>, or
+click the "Show Source to the Side" button in the editor title bar. To open
+an SVG as text instead, use **Reopen Editor With… → Text Editor**.
+
+**How do I open a side preview from a text editor?**
+Use the keybinding
 <kbd>Ctrl</kbd>+<kbd>K</kbd> <kbd>V</kbd> while focused on an `.svg`, run
 **SVG Preview: Open SVG Preview to the Side** from the command palette, or
 right-click an `.svg` in the Explorer. To opt in to auto-open, set
 `lightweightSvgPreviewer.autoOpen` to `true`.
 
-**My `.svg` opens as an image, not as text.**
-You have a stronger user-level entry in `workbench.editorAssociations`. Open
-`settings.json` and remove the `*.svg` entry — the extension's
-`configurationDefaults` will then take over.
+**My `.svg` opens as text or as an image, not in SVG Preview.**
+You have a user-level `*.svg` entry in `workbench.editorAssociations`. Remove
+it from `settings.json` (or set it to `lightweightSvgPreviewer.editor`).
 
 **Updates feel slow.**
 Lower `lightweightSvgPreviewer.debounceMs` toward `50`. Pushing it below
@@ -167,6 +195,8 @@ src/
   extension.ts     — activation, panel manager, debounce, message wiring
   util.ts          — pure helpers (testable in node:test)
   util.test.ts     — unit tests
+docs/figures/     — architecture diagrams (.tikz sources, rendered by tikzc;
+                     *-en.png are used in this README, Japanese docs in index.md)
 media/
   preview.js       — webview script: message → innerHTML
   preview.css      — fit-to-window, theme variables

@@ -1,0 +1,14 @@
+kind: group
+status: active
+sources:
+  - src/extension.ts#flush
+  - src/extension.ts#activate
+children: [vscode-text-document, change-listener, debounce-timers, flush, webview-renderer, config-cache, preview-registry]
+refs: []
+analyzed_commit: 0d1645c
+working_tree_dirty: true
+render:
+  tikz_sha256: a7bd49691f4c111bf6f1fffafa360a229f7fe8c6ad1d28163ce2aeaef223a2c0
+  tikzc_version: 1.3.0
+  check: pass
+  visual: inspected

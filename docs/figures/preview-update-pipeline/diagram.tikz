@@ -1,0 +1,53 @@
+#| mainfont: Noto Sans CJK JP
+% 編集 1 回がプレビューに届くまでの経路と，各段で省いている仕事．
+% Semantic node IDs match child directories; notes and helpers have no ID.
+\definecolor{navy}{HTML}{0E3666}
+\definecolor{aliceblue}{HTML}{E8F1FE}
+\definecolor{azureblue}{HTML}{428CE6}
+\definecolor{paleskyblue}{HTML}{B4D7FF}
+\definecolor{fontblack}{HTML}{1A1A1A}
+\definecolor{darkgray}{HTML}{575757}
+\definecolor{lightgray}{HTML}{DEDEDE}
+\definecolor{crimsonred}{HTML}{D31804}
+\definecolor{mistyrose}{HTML}{FBE7E6}
+\begin{tikzpicture}[
+  every node/.style={text=fontblack},
+  block/.style={draw=navy,fill=aliceblue,rounded corners=3pt,
+    align=center,minimum width=3.6cm,minimum height=1.25cm,inner sep=8pt},
+  entry/.style={block,line width=1.6pt},
+  accent/.style={block,fill=paleskyblue},
+  store/.style={block,shape=cylinder,shape border rotate=90,aspect=0.15,
+    rounded corners=0pt,fill=white,minimum height=1.0cm},
+  external/.style={block,draw=darkgray,fill=white,dashed},
+  rel/.style={font=\footnotesize,text=darkgray,fill=white,inner sep=2pt},
+  note/.style={font=\footnotesize,text=darkgray,align=center},
+  step/.style={font=\footnotesize\bfseries,text=azureblue},
+  >={Stealth[length=2.5mm]},font=\small,line width=0.7pt
+]
+  % 主経路（左→右）
+  \node[external] (vscode-text-document) at (0,0) {VS Code\\TextDocument};
+  \node[entry] (change-listener) at (6.0,0) {単一の変更リスナー\\\texttt{onDidChangeTextDocument}};
+  \node[block] (debounce-timers) at (12.0,0) {文書単位の debounce\\\texttt{debounceTimers}};
+  \node[accent] (flush) at (18.0,0) {\texttt{flush(key)}\\非表示・同じ版は送らない\\\texttt{getText()} は 1 回だけ};
+  \node[block] (webview-renderer) at (24.0,0) {Webview\\\texttt{media/preview.js}};
+
+  % 下段：参照されるメモリ上の状態
+  \node[store] (config-cache) at (12.0,-3.3) {設定キャッシュ\\\texttt{config}};
+  \node[store] (preview-registry) at (18.0,-3.3) {プレビュー台帳\\\texttt{previews}};
+
+  \draw[->,navy] (vscode-text-document) -- node[rel,above=4pt] {編集} (change-listener);
+  \draw[->,navy] (change-listener) -- node[rel,above=4pt] {タイマー更新} (debounce-timers);
+  \draw[->,navy] (debounce-timers) -- node[rel,above=4pt] {静止後に発火} (flush);
+  \draw[->,navy] (flush) -- node[rel,above=4pt] {全文を \texttt{update}} (webview-renderer);
+  \draw[->,navy] (config-cache) -- node[rel,right] {\texttt{debounceMs}} (debounce-timers);
+  \draw[->,navy] (preview-registry) -- node[rel,right,align=left] {対象 Preview と\\送信済みの版} (flush);
+  \draw[->,navy] (preview-registry.south) -- ++(0,-0.6) coordinate (_r) -| node[rel,pos=0.25,below] {URI が登録済みか} (change-listener.south);
+
+  % 各段で省いている仕事（枠なしの補足）
+  \node[step,above=4mm of change-listener] {① 早期 return};
+  \node[step,above=4mm of debounce-timers] {② 連打をまとめる};
+  \node[step,above=4mm of flush] {③ 送らない判定};
+  \node[step,above=4mm of webview-renderer] {④ 比較せず描画};
+  \node[note,anchor=north east] at ([xshift=-2mm,yshift=-3mm]change-listener.south) {内容変更なし・\\プレビューのない\\文書はここで終了};
+  \node[note,below=3mm of webview-renderer] {\texttt{innerHTML} 差し替えのみ\\（パーサ・差分計算なし）};
+\end{tikzpicture}

@@ -1,0 +1,8 @@
+kind: leaf
+status: active
+sources:
+  - media/preview.js
+children: []
+refs: [preview-update-pipeline/webview-renderer]
+analyzed_commit: 0d1645c
+working_tree_dirty: true

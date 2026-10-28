@@ -1,0 +1,9 @@
+kind: leaf
+status: active
+sources:
+  - src/extension.ts#openPreview
+  - src/extension.ts#activate
+children: []
+refs: []
+analyzed_commit: 0d1645c
+working_tree_dirty: true
